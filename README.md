@@ -83,8 +83,7 @@ Telefone: (61) 0000-0000
 👤 Autor
 Alessandro Santos
 
-💼 LinkedIn 
-linkedin.com/in/alessandro-leite-219bb71b9
+💼 [LinkedIn](https://www.linkedin.com/in/alessandro-leite-219bb71b9/)  
 
 💻 GitHub
 https://github.com/alessandroleitte
