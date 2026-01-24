@@ -1,109 +1,124 @@
-var formserv =  FormApp.openById('Id do formulario'); //substitua pelo ID do seu formulário
-var servdb = SpreadsheetApp.openById('id da planilha').getSheetByName('MOTORISTAS'); // substitua pelo nome da sua planilha
-var servdbcar = SpreadsheetApp.openById('id da planilha').getSheetByName('PLACAS'); // substitua pelo nome da sua planilha
-var servresp = SpreadsheetApp.openById('id da planilha').getSheetByName('RESPOSTAS'); // substitua pelo nome da sua planilha
-var lastRow = servdb.getLastRow();
-var lastRowcar = servdbcar.getLastRow();
-var motoristas = servdb.getRange("A2:A"+lastRow).getValues();
-var placas = servdbcar.getRange("A2:A"+lastRowcar).getValues();
+/**
+ * Projeto: Automação de Solicitação de Pagamentos
+ * Stack: Google Apps Script + Google Forms + Google Sheets
+ * Objetivo: Enviar e-mails HTML profissionais a partir de respostas de formulário
+ */
 
-var lastRowresp = servresp.getLastRow();
+// === ABERTURA DE FORMULÁRIO E PLANILHAS ===
 
-var nresp = servresp.getRange(`B${lastRowresp}`).getValues();
-var tserv = servresp.getRange(`D${lastRowresp}`).getValues();
-var favor = servresp.getRange(`E${lastRowresp}`).getValues();
-var cpf = servresp.getRange(`P${lastRowresp}`).getValues();
-var banco = servresp.getRange(`F${lastRowresp}`).getValues();
-var ag= servresp.getRange(`G${lastRowresp}`).getValues();
-var ct = servresp.getRange(`H${lastRowresp}`).getValues();
-var pix = servresp.getRange(`I${lastRowresp}`).getValues();
-var valor = servresp.getRange(`J${lastRowresp}`).getValues();
-var mot = servresp.getRange(`O${lastRowresp}`).getValues();
-var obs = servresp.getRange(`K${lastRowresp}`).getValues();
-var img = servresp.getRange(`L${lastRowresp}`).getValues();
-var placa = servresp.getRange(`N${lastRowresp}`).getValues();
-var dpt = servresp.getRange(`C${lastRowresp}`).getValues();
-var envioC = servresp.getRange(`M${lastRowresp}`).getValues();
+// ID do Google Form (substituído por segurança)
+const formserv = FormApp.openById('FORM_ID_AQUI');
 
-var assuntoemail  = `${tserv} / ${mot} - ${placa} - ${favor};`
-var valort = valor && !isNaN(valor) ? parseFloat(valor).toFixed(2) : "0.00";
+// ID da planilha principal (substituído por segurança)
+const spreadsheet = SpreadsheetApp.openById('SPREADSHEET_ID_AQUI');
 
+const servdb     = spreadsheet.getSheetByName('MOTORISTAS');
+const servdbcar  = spreadsheet.getSheetByName('PLACAS');
+const servresp   = spreadsheet.getSheetByName('Respostas');
 
-// corpo do e-mail
-var body = `
-Ao senhor responsável, 
+// === DADOS PARA LISTAS DINÂMICAS ===
 
-Solicito o pagamento de ${tserv}.
+let lastRow    = servdb.getLastRow();
+let lastRowCar = servdbcar.getLastRow();
 
-Dados bancários do favorecido:
-NOME: ${favor}
-BANCO: ${banco}
-AGÊNCIA : ${ag}
-CONTA: ${ct}
-CHAVE PIX: ${pix}
-CPF/CNPJ: ${cpf}
+let motoristas = servdb.getRange(`A2:A${lastRow}`).getValues().flat();
+let placas     = servdbcar.getRange(`A2:A${lastRowCar}`).getValues().flat();
 
-VALOR: R$ ${valort} 
+// === ÚLTIMA RESPOSTA DO FORMULÁRIO ===
 
-MOTORISTA: ${mot}
-PLACA: ${placa}
+let lastRowResp = servresp.getLastRow();
 
-Obs: ${obs}
+let solicitante = servresp.getRange(`B${lastRowResp}`).getValue();
+let tipoServico = servresp.getRange(`D${lastRowResp}`).getValue();
+let favorecido  = servresp.getRange(`E${lastRowResp}`).getValue();
+let documento   = servresp.getRange(`P${lastRowResp}`).getValue();
+let banco       = servresp.getRange(`F${lastRowResp}`).getValue();
+let agencia     = servresp.getRange(`G${lastRowResp}`).getValue();
+let conta       = servresp.getRange(`H${lastRowResp}`).getValue();
+let pix         = servresp.getRange(`I${lastRowResp}`).getValue();
+let valor       = servresp.getRange(`J${lastRowResp}`).getValue();
+let motorista   = servresp.getRange(`O${lastRowResp}`).getValue();
+let observacao  = servresp.getRange(`K${lastRowResp}`).getValue();
+let comprovante = servresp.getRange(`L${lastRowResp}`).getValue();
+let placa       = servresp.getRange(`N${lastRowResp}`).getValue();
+let departamento= servresp.getRange(`C${lastRowResp}`).getValue();
+let copiaEmail  = servresp.getRange(`M${lastRowResp}`).getValue();
 
-_
-${img}
-_
+// === FORMATAÇÃO DE VALOR ===
 
-Respeitosamente, 
+let valorFormatado = valor.toLocaleString('pt-BR', {
+  style: 'currency',
+  currency: 'BRL'
+});
 
-${nresp}
-${dpt}
-AV. DAS NAÇÕES QD 301 LOTE 01,
-BRASILIA-DF / CEP 00000-000
-EMPRESA S/A
-CNPJ: 00.000.000/0001-00
-Telefone: (61) 0000-0000
+// === ASSUNTO DO E-MAIL ===
+
+let assuntoEmail = `Solicitação de Pagamento | ${tipoServico}`;
+
+// === CORPO DO E-MAIL (HTML INLINE) ===
+
+let body = `
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#2f2f2f;line-height:1.6;max-width:640px;margin:auto;padding:20px;">
+
+  <h2 style="color:#1f2937;">Solicitação de Pagamento</h2>
+  <p style="color:#4b5563;">Referente a serviço prestado</p>
+
+  <p>Prezados,<br><br>
+  Solicito o pagamento conforme informações abaixo:</p>
+
+  <div style="margin:20px 0;padding:14px;background:#f9fafb;border-left:4px solid #2563eb;">
+    <p><strong>Serviço:</strong> ${tipoServico}</p>
+    <p><strong>Valor:</strong> ${valorFormatado}</p>
+    <p><strong>Placa:</strong> ${placa}</p>
+  </div>
+
+  <h3>Dados do Favorecido</h3>
+  <p>
+    <strong>Nome:</strong> ${favorecido}<br>
+    <strong>Documento:</strong> ${documento}<br>
+    <strong>Banco:</strong> ${banco}<br>
+    <strong>Agência:</strong> ${agencia}<br>
+    <strong>Conta:</strong> ${conta}<br>
+    <strong>PIX:</strong> ${pix}
+  </p>
+
+  <h3>Dados Operacionais</h3>
+  <p>
+    <strong>Motorista:</strong> ${motorista}<br>
+    <strong>Placa:</strong> ${placa}
+  </p>
+
+  <p><strong>Observações:</strong><br>${observacao || '-'}</p>
+
+  <p>
+    <strong>Comprovante:</strong><br>
+    <a href="${comprovante}" target="_blank">Visualizar</a>
+  </p>
+
+  <hr style="margin:30px 0;border:0;border-top:1px solid #e5e7eb;">
+
+  <p>
+    Atenciosamente,<br><br>
+    <strong>${solicitante}</strong><br>
+    ${departamento}
+  </p>
+
+  <p style="font-size:12px;color:#6b7280;">
+    Empresa Exemplo S/A<br>
+    Documento institucional omitido por segurança
+  </p>
+
+</div>
 `;
 
+// === ENVIO DE E-MAIL ===
 
-// Função mostrar lista de motoristas 
-function getDriver()
-{
-var item = formserv.addListItem();
-item.setTitle('Motorista')
-item.setChoiceValues(motoristas);
-Logger.log(item.getId());
+function enviarEmail() {
+  MailApp.sendEmail({
+    to: 'financeiro@empresaexemplo.com',
+    cc: copiaEmail,
+    subject: assuntoEmail,
+    htmlBody: body,
+    name: `${solicitante} | ${departamento}`
+  });
 }
-
-
-// Função mostrar lista de Placas 
-function getPlaca()
-{
-var item = formserv.addListItem();
-item.setTitle('Placa')
-item.setChoiceValues(placas);
-Logger.log(item.getId());
-}
-
-// Atualização de listas 
-function updateDriver()
-{
-  formserv.getItemById("id do formulario").asListItem().setChoiceValues(motoristas);
-}
-function updatePlacas()
-{
-  formserv.getItemById("id do formulario").asListItem().setChoiceValues(placas);
-}
-
-var nm = `${nresp} - ${dpt} solicitação para pagamento de ${tserv}`;
-
-// FUNÇÃO PARA ENVIAR E-MAIL	
-function email() {
-  var destino = `exemplo@email.com,${envioC}`;
-  var assunto = assuntoemail;
-  var mensagem = body;
-  var nome = nm;
-  MailApp.sendEmail(destino, assunto,mensagem,{
-    name: nome,
-});
- }	
